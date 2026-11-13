@@ -173,22 +173,25 @@
             unityVersion: "2019.4.18f1",
             unityWebglBuildUrl: "ZurichNewPrivacy.json",
             unityWebglLoaderUrl: "UnityLoader.2019.2.js",
-            fileSize: 36,
+            fileSize: 55,
             cachedDecompressedFileSizes: {
                 "ZurichNewPrivacy.asm.code.unityweb": 9078047,
                 "ZurichNewPrivacy.asm.framework.unityweb": 86375,
                 "ZurichNewPrivacy.asm.memory.unityweb": 956748,
-                "ZurichNewPrivacy.data.unityweb": 19164736,
-                "ZurichNewPrivacy.wasm.code.unityweb": 7282721,
-                "ZurichNewPrivacy.wasm.framework.unityweb": 90700
+                "ZurichNewPrivacy.data.unityweb": 28988830,
+                "ZurichNewPrivacy.wasm.code.unityweb": 25767131,
+                "ZurichNewPrivacy.wasm.framework.unityweb": 521663
             }
         };
 
         // Service Worker Registration for PWA & Offline
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then((reg) => console.log('[PWA] Service Worker actif (scope: ' + reg.scope + ')'))
+                navigator.serviceWorker.register('./sw.js?v=2')
+                    .then((reg) => {
+                        console.log('[PWA] Service Worker actif (scope: ' + reg.scope + ')');
+                        reg.update();
+                    })
                     .catch((err) => console.warn('[PWA] Erreur Service Worker:', err));
             });
         }
@@ -242,9 +245,22 @@
                     const tip = document.createElement('div');
                     tip.id = 'loading-tip';
                     tip.style.cssText = 'font-size: 11px; opacity: 0.85; margin-top: 10px; max-width: 290px; text-align: center; line-height: 1.4; color: #ffdd88;';
-                    tip.innerHTML = '⚡ <em>Téléchargement initial du jeu (55 Mo)...<br>Les lancements suivants seront instantanés même hors-ligne !</em>';
+                    tip.innerHTML = '⚡ <em>Téléchargement initial du jeu (55 Mo)...<br>Les lancements suivants seront instantanés même hors-ligne !</em><br><a href="#" id="reset-cache-link" style="color: #bbb; text-decoration: underline; font-size: 10px; display: inline-block; margin-top: 8px;">🔄 Bloqué ? Réinitialiser le cache</a>';
                     if (comment.parentNode) {
                         comment.parentNode.appendChild(tip);
+                        const resetLink = document.getElementById('reset-cache-link');
+                        if (resetLink) {
+                            resetLink.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                if (window.caches) {
+                                    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => {
+                                        window.location.reload(true);
+                                    });
+                                } else {
+                                    window.location.reload(true);
+                                }
+                            });
+                        }
                     }
                 }
                 const loader = document.getElementById('loader');
