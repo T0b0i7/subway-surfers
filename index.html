@@ -228,6 +228,16 @@
 
     <div id="swipe-hint" class="swipe-hint">Glissez le doigt (haut, bas, gauche, droite) pour jouer</div>
 
+    <script>
+        // Fallback for Unity compatibility popups
+        window.showUnitywebNoSupport = function() {};
+        try {
+            if (window.parent) {
+                window.parent.showUnitywebNoSupport = window.showUnitywebNoSupport;
+            }
+        } catch(e) {}
+    </script>
+
     <!-- Master Unity Loader -->
     <script src="master-loader.js"></script>
 

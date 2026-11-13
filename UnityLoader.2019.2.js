@@ -1772,11 +1772,17 @@ var UnityLoader = UnityLoader || {
       handler: function(e, t) {
           var r = t ? this.demangle(e, t) : e.message;
           if (!(t && t.errorhandler && t.errorhandler(r, e.filename, e.lineno) || (console.log("Invoking error handler due to\n" + r), "function" == typeof dump && dump("Invoking error handler due to\n" + r), -1 != r.indexOf("UnknownError") || -1 != r.indexOf("Program terminated with exit(0)") || this.didShowErrorMessage))) {
-              parent.showUnitywebNoSupport();
+              if (typeof parent !== 'undefined' && typeof parent.showUnitywebNoSupport === 'function') {
+                  parent.showUnitywebNoSupport();
+              }
           }
       },
       popup: function(e, t, r) {
-          parent.showUnitywebNoSupport();
+          if (typeof parent !== 'undefined' && typeof parent.showUnitywebNoSupport === 'function') {
+              parent.showUnitywebNoSupport();
+          } else if (Array.isArray(t) && t[0] && typeof t[0].callback === 'function') {
+              t[0].callback();
+          }
       }
   },
   Job: {
@@ -2031,16 +2037,8 @@ var UnityLoader = UnityLoader || {
       }
   }(),
   compatibilityCheck: function(e, t, r) {
-      UnityLoader.SystemInfo.hasWebGL ? UnityLoader.SystemInfo.mobile ? e.popup("Please note that Unity WebGL is not currently supported on mobiles. Press OK if you wish to continue anyway.", [{
-          text: "OK",
-          callback: t
-      }]) : -1 == ["Edge", "Firefox", "Chrome", "Safari"].indexOf(UnityLoader.SystemInfo.browser) ? e.popup("Please note that your browser is not currently supported for this Unity WebGL content. Press OK if you wish to continue anyway.", [{
-          text: "OK",
-          callback: t
-      }]) : t() : e.popup("Your browser does not support WebGL", [{
-          text: "OK",
-          callback: r
-      }])
+      // Bypass mobile warning check to allow seamless mobile gameplay
+      t();
   },
   buildCompatibilityCheck: function(e, t, r) {
       ! function() {
