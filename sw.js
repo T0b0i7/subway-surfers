@@ -1,4 +1,4 @@
-const CACHE_NAME = 'subway-surfers-v1';
+const CACHE_NAME = 'subway-surfers-v2';
 
 const APP_SHELL = [
   './',
@@ -9,6 +9,7 @@ const APP_SHELL = [
   './master-loader.js',
   './unity.js',
   './poki-sdk.js',
+  './poki-sdk-core-v2.234.2.js',
   './UnityLoader.2019.2.js',
   './ZurichNewPrivacy.json',
   './img/FirstAvatar.png',
@@ -24,18 +25,16 @@ const APP_SHELL = [
   './icons/apple-touch-icon.png'
 ];
 
-// Pre-cache App Shell on install
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(APP_SHELL).catch((err) => {
-        console.warn('[SW] App Shell pre-cache warning:', err);
+        console.warn('[SW] Pré-mise en cache App Shell:', err);
       });
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activate: clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -50,30 +49,26 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Cache-first for large assets (unityweb, wasm, data), Network-first with cache fallback for others
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Ignore non-GET requests or browser extensions
   if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) {
     return;
   }
 
-  // Handle Range requests for cached unityweb assets
+  // Handle Range requests (often sent by mobile WebGL loaders)
   if (event.request.headers.has('range')) {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
         const cached = await cache.match(event.request, { ignoreSearch: true });
-        if (cached) {
-          return cached;
-        }
+        if (cached) return cached;
         return fetch(event.request);
       })
     );
     return;
   }
 
-  // Large assets or scripts: Cache-first, then network & put into cache
+  // Large Game Assets: Cache-First
   const isGameAsset = url.pathname.endsWith('.unityweb') ||
                       url.pathname.endsWith('.wasm') ||
                       url.pathname.endsWith('.data') ||
@@ -82,32 +77,33 @@ self.addEventListener('fetch', (event) => {
 
   if (isGameAsset) {
     event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
+      caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
         if (cachedResponse) {
           return cachedResponse;
         }
         return fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, clone).catch(() => {});
+            });
           }
           return networkResponse;
-        }).catch(() => {
-          // Fallback if offline and not cached
-          return caches.match('./index.html');
         });
       })
     );
     return;
   }
 
-  // Default: Network first, fallback to cache
+  // Default: Network First, fallback to cache
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const clone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, clone).catch(() => {});
+          });
         }
         return networkResponse;
       })

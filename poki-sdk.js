@@ -1,113 +1,105 @@
-(() => {
-  var e = function (e) {
-      var n = RegExp("[?&]" + e + "=([^&]*)").exec(window.location.search);
-      return n && decodeURIComponent(n[1].replace(/\+/g, " "));
-    },
-    n = "kids" === e("tag"),
-    o = new ((function () {
-      function e() {
-        var e = this;
-        (this.queue = []),
-          (this.init = function (n) {
-            return (
-              void 0 === n && (n = {}),
-              new Promise(function (o, t) {
-                e.enqueue("init", n, o, t);
-              })
-            );
-          }),
-          (this.rewardedBreak = function () {
-            return new Promise(function (e) {
-              e(!1);
-            });
-          }),
-          (this.noArguments = function (n) {
-            return function () {
-              e.enqueue(n);
-            };
-          }),
-          (this.oneArgument = function (n) {
-            return function (o) {
-              e.enqueue(n, o);
-            };
-          }),
-          (this.handleAutoResolvePromise = function () {
-            return new Promise(function (e) {
-              e();
-            });
-          }),
-          (this.handleAutoResolvePromiseObj = function () {
-            return new Promise(function (e) {
-              e();
-            });
-          }),
-          (this.throwNotLoaded = function () {
-            console.debug("PokiSDK is not loaded yet. Not all methods are available.");
-          });
-      }
-      return (
-        (e.prototype.enqueue = function (e, o, t, i) {
-          var r = { fn: e, options: o, resolveFn: t, rejectFn: i };
-          n ? i && i() : this.queue.push(r);
-        }),
-        (e.prototype.dequeue = function () {
-          for (
-            var e = function () {
-                var e = n.queue.shift(),
-                  o = e,
-                  t = o.fn,
-                  i = o.options;
-                "function" == typeof window.PokiSDK[t]
-                  ? (null == e ? void 0 : e.resolveFn) || (null == e ? void 0 : e.rejectFn)
-                    ? window.PokiSDK[t](i)
-                        .then(function () {
-                          for (var n = [], o = 0; o < arguments.length; o++) n[o] = arguments[o];
-                          "function" == typeof e.resolveFn && e.resolveFn.apply(e, n);
-                        })
-                        .catch(function () {
-                          for (var n = [], o = 0; o < arguments.length; o++) n[o] = arguments[o];
-                          "function" == typeof e.rejectFn && e.rejectFn.apply(e, n);
-                        })
-                    : void 0 !== (null == e ? void 0 : e.fn) && window.PokiSDK[t](i)
-                  : console.error("Cannot execute " + e.fn);
-              },
-              n = this;
-            this.queue.length > 0;
+/**
+ * PokiSDK Bridge Mock pour Subway Surfers PWA
+ * Assure un démarrage instantané 100% hors-ligne sans dépendance réseau externe.
+ */
+(function () {
+  'use strict';
+  console.log('[PokiSDK] Initialisation du pont Subway Surfers...');
 
-          )
-            e();
-        }),
-        e
-      );
-    })())();
-  (window.PokiSDK = { init: o.init, initWithVideoHB: o.init, customEvent: o.throwNotLoaded, destroyAd: o.throwNotLoaded, getLeaderboard: o.handleAutoResolvePromiseObj }),
-    ["disableProgrammatic", "gameLoadingStart", "gameLoadingFinished", "gameInteractive", "roundStart", "roundEnd", "muteAd"].forEach(function (e) {
-      window.PokiSDK[e] = o.noArguments(e);
-    }),
-    [
-      "setDebug",
-      "gameplayStart",
-      "gameplayStop",
-      "gameLoadingProgress",
-      "happyTime",
-      "setPlayerAge",
-      "togglePlayerAdvertisingConsent",
-      "toggleNonPersonalized",
-      "setConsentString",
-      "logError",
-      "sendHighscore",
-      "setDebugTouchOverlayController",
-    ].forEach(function (e) {
-      window.PokiSDK[e] = o.oneArgument(e);
-    });
-  var t,
-    i = ((t = window.pokiSDKVersion) || (t = e("ab") || "v2.234.2"), "poki-sdk-" + (n ? "kids" : "core") + "-" + t + ".js"),
-    r = document.createElement("script");
-  r.setAttribute("src", i),
-    r.setAttribute("type", "text/javascript"),
-    r.setAttribute("crossOrigin", "anonymous"),
-    (r.onload = function () {
-      return o.dequeue();
-    }),
-    document.head.appendChild(r);
+  window.pokiReady = true;
+
+  const PokiMock = {
+    init: function () {
+      console.log('[PokiSDK] init() -> Résolu immédiatement');
+      window.pokiReady = true;
+      if (window.pokiBridge && window.unityGame && typeof window.unityGame.SendMessage === 'function') {
+        try {
+          window.unityGame.SendMessage(window.pokiBridge, 'ready');
+        } catch (e) {}
+      }
+      return Promise.resolve();
+    },
+    initWithVideoHB: function () {
+      return this.init();
+    },
+    customEvent: function () {},
+    gameLoadingStart: function () {
+      console.log('[PokiSDK] gameLoadingStart');
+    },
+    gameLoadingFinished: function () {
+      console.log('[PokiSDK] gameLoadingFinished');
+    },
+    gameInteractive: function () {
+      console.log('[PokiSDK] gameInteractive');
+    },
+    gameplayStart: function () {
+      console.log('[PokiSDK] gameplayStart');
+    },
+    gameplayStop: function () {
+      console.log('[PokiSDK] gameplayStop');
+    },
+    gameLoadingProgress: function () {},
+    roundStart: function () {},
+    roundEnd: function () {},
+    happyTime: function () {},
+    setDebug: function () {},
+    setDebugTouchOverlayController: function () {},
+    setPlayerAge: function () {},
+    togglePlayerAdvertisingConsent: function () {},
+    toggleNonPersonalized: function () {},
+    setConsentString: function () {},
+    logError: function () {},
+    sendHighscore: function () {},
+    destroyAd: function () {},
+    getLeaderboard: function () {
+      return Promise.resolve([]);
+    },
+    commercialBreak: function () {
+      return Promise.resolve();
+    },
+    rewardedBreak: function () {
+      // Donne les récompenses (clés, pièces) directement au joueur !
+      return Promise.resolve(true);
+    },
+    displayAd: function () {
+      return Promise.resolve();
+    },
+    getIsoLanguage: function () {
+      return 'fr';
+    }
+  };
+
+  window.PokiSDK = PokiMock;
+
+  // Intercepteur du bridge Unity
+  window.initPokiBridge = function (bridgeName) {
+    console.log('[PokiSDK] initPokiBridge enregistré pour:', bridgeName);
+    window.pokiBridge = bridgeName;
+    window.pokiReady = true;
+
+    if (window.unityGame && typeof window.unityGame.SendMessage === 'function') {
+      try {
+        window.unityGame.SendMessage(bridgeName, 'ready');
+        console.log('[PokiSDK] Message "ready" transmis au moteur Unity !');
+      } catch (err) {
+        console.warn('[PokiSDK] Erreur SendMessage:', err);
+      }
+    }
+
+    window.commercialBreak = function () {
+      window.PokiSDK.commercialBreak().then(function () {
+        if (window.unityGame && typeof window.unityGame.SendMessage === 'function') {
+          window.unityGame.SendMessage(bridgeName, 'commercialBreakCompleted');
+        }
+      });
+    };
+
+    window.rewardedBreak = function () {
+      window.PokiSDK.rewardedBreak().then(function (allowed) {
+        if (window.unityGame && typeof window.unityGame.SendMessage === 'function') {
+          window.unityGame.SendMessage(bridgeName, 'rewardedBreakCompleted', allowed ? 'true' : 'false');
+        }
+      });
+    };
+  };
 })();
