@@ -1,0 +1,8 @@
+{
+  "name": "subway-surfers-pwa",
+  "version": "1.0.0",
+  "description": "Subway Surfers PWA Mobile",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

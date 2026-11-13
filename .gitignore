@@ -1,0 +1,9 @@
+# Node & Python
+__pycache__/
+*.pyc
+node_modules/
+package-lock.json
+
+# Split parts (merged .unityweb files are already included)
+*.part1
+*.part2

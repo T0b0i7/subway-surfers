@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Subway Surfers</title>
+
+    <!-- PWA Primary Meta Tags -->
+    <meta name="theme-color" content="#ffb800">
+    <meta name="description" content="Subway Surfers: Zurich - Version PWA Mobile jouable hors-ligne">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Subway Surfers">
+
+    <!-- Icons & Manifest -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <link rel="manifest" href="manifest.webmanifest">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0d0f17;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        #game, canvas {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100vw;
+            max-height: 100vh;
+            display: block;
+            outline: none;
+        }
+
+        /* Top HUD / Controls */
+        .hud-overlay {
+            position: fixed;
+            top: env(safe-area-inset-top, 10px);
+            right: 12px;
+            z-index: 10000;
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .hud-btn {
+            background: rgba(15, 18, 28, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .hud-btn:active {
+            transform: scale(0.94);
+            background: rgba(255, 184, 0, 0.9);
+            color: #111;
+        }
+
+        .hud-btn.install-btn {
+            background: linear-gradient(135deg, #ffb800 0%, #ff8c00 100%);
+            color: #111111;
+            border: none;
+            display: none;
+            animation: pulse-install 2s infinite;
+        }
+
+        @keyframes pulse-install {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 184, 0, 0.6); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 184, 0, 0); }
+        }
+
+        /* iOS Install Guide Toast */
+        .ios-banner {
+            position: fixed;
+            bottom: max(20px, env(safe-area-inset-bottom, 20px));
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(18, 22, 34, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 184, 0, 0.4);
+            border-radius: 16px;
+            padding: 12px 18px;
+            color: #ffffff;
+            z-index: 10001;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            max-width: 90vw;
+            width: 360px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .ios-banner img {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+        }
+
+        .ios-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 18px;
+            padding: 4px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        /* Swipe Guide hint */
+        .swipe-hint {
+            position: fixed;
+            bottom: max(16px, env(safe-area-inset-bottom, 16px));
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.55);
+            color: #aaa;
+            padding: 6px 14px;
+            border-radius: 14px;
+            font-size: 11px;
+            pointer-events: none;
+            z-index: 9999;
+            transition: opacity 1s ease;
+        }
+    </style>
+
+    <script src="4399.z.js"></script>
+
+    <script>
+        window.config = {
+            loader: "unity",
+            debug: false,
+            maxRatio: 16 / 9,
+            minRatio: 9 / 16,
+            title: "Subway Surfers: Zurich",
+            unityVersion: "2019.4.18f1",
+            unityWebglBuildUrl: "ZurichNewPrivacy.json",
+            unityWebglLoaderUrl: "UnityLoader.2019.2.js",
+            fileSize: 36,
+            cachedDecompressedFileSizes: {
+                "ZurichNewPrivacy.asm.code.unityweb": 9078047,
+                "ZurichNewPrivacy.asm.framework.unityweb": 86375,
+                "ZurichNewPrivacy.asm.memory.unityweb": 956748,
+                "ZurichNewPrivacy.data.unityweb": 19164736,
+                "ZurichNewPrivacy.wasm.code.unityweb": 7282721,
+                "ZurichNewPrivacy.wasm.framework.unityweb": 90700
+            }
+        };
+
+        // Service Worker Registration for PWA & Offline
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((reg) => console.log('[PWA] Service Worker actif (scope: ' + reg.scope + ')'))
+                    .catch((err) => console.warn('[PWA] Erreur Service Worker:', err));
+            });
+        }
+    </script>
+</head>
+
+<body>
+
+    <div id="game-container">
+        <!-- Unity instantiates inside #game -->
+        <div id="game"></div>
+    </div>
+
+    <!-- HUD Overlay for Mobile & Desktop -->
+    <div class="hud-overlay">
+        <button id="install-btn" class="hud-btn install-btn" title="Installer l'application sur le téléphone">
+            📲 <span>Installer</span>
+        </button>
+        <button id="fullscreen-btn" class="hud-btn" title="Plein écran">
+            ⛶ <span>Plein écran</span>
+        </button>
+    </div>
+
+    <!-- iOS Add to Home Screen Instructions -->
+    <div id="ios-guide" class="ios-banner">
+        <img src="icons/icon-96.png" alt="Subway Surfers">
+        <div>
+            <strong>Installer Subway Surfers</strong><br>
+            Appuyez sur <strong>Partager</strong> ⎋ puis sur <strong>« Sur l'écran d'accueil »</strong> ➕
+        </div>
+        <button id="ios-close-btn" class="ios-close">✕</button>
+    </div>
+
+    <div id="swipe-hint" class="swipe-hint">Glissez le doigt (haut, bas, gauche, droite) pour jouer</div>
+
+    <!-- Master Unity Loader -->
+    <script src="master-loader.js"></script>
+
+    <script>
+        // ==========================================
+        // 1. MOBILE TOUCH SWIPE CONTROLS FOR UNITY
+        // ==========================================
+        (function setupTouchGestures() {
+            let startX = 0;
+            let startY = 0;
+            let startTime = 0;
+            let lastTapTime = 0;
+            const MIN_SWIPE_DISTANCE = 30; // pixels
+            const MAX_SWIPE_TIME = 450;    // ms
+
+            function sendKeyEvent(code, key, keyCode) {
+                const target = document.querySelector('canvas') || window;
+                const down = new KeyboardEvent('keydown', {
+                    key: key,
+                    code: code,
+                    keyCode: keyCode,
+                    which: keyCode,
+                    bubbles: true,
+                    cancelable: true
+                });
+                const up = new KeyboardEvent('keyup', {
+                    key: key,
+                    code: code,
+                    keyCode: keyCode,
+                    which: keyCode,
+                    bubbles: true,
+                    cancelable: true
+                });
+
+                target.dispatchEvent(down);
+                window.dispatchEvent(down);
+                document.dispatchEvent(down);
+
+                setTimeout(() => {
+                    target.dispatchEvent(up);
+                    window.dispatchEvent(up);
+                    document.dispatchEvent(up);
+                }, 90);
+            }
+
+            window.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    startTime = Date.now();
+
+                    // Double tap detection for Hoverboard (Space)
+                    const now = Date.now();
+                    if (now - lastTapTime < 280) {
+                        sendKeyEvent('Space', ' ', 32);
+                        lastTapTime = 0;
+                    } else {
+                        lastTapTime = now;
+                    }
+                }
+            }, { passive: true });
+
+            window.addEventListener('touchend', (e) => {
+                if (!startX && !startY) return;
+
+                const endX = e.changedTouches[0].clientX;
+                const endY = e.changedTouches[0].clientY;
+                const diffX = endX - startX;
+                const diffY = endY - startY;
+                const elapsed = Date.now() - startTime;
+
+                if (elapsed <= MAX_SWIPE_TIME) {
+                    const absX = Math.abs(diffX);
+                    const absY = Math.abs(diffY);
+
+                    if (Math.max(absX, absY) > MIN_SWIPE_DISTANCE) {
+                        if (absX > absY) {
+                            if (diffX > 0) {
+                                // Swipe Right
+                                sendKeyEvent('ArrowRight', 'ArrowRight', 39);
+                            } else {
+                                // Swipe Left
+                                sendKeyEvent('ArrowLeft', 'ArrowLeft', 37);
+                            }
+                        } else {
+                            if (diffY > 0) {
+                                // Swipe Down (Roll)
+                                sendKeyEvent('ArrowDown', 'ArrowDown', 40);
+                            } else {
+                                // Swipe Up (Jump)
+                                sendKeyEvent('ArrowUp', 'ArrowUp', 38);
+                            }
+                        }
+
+                        // Hide swipe hint after first successful gesture
+                        const hint = document.getElementById('swipe-hint');
+                        if (hint) {
+                            hint.style.opacity = '0';
+                            setTimeout(() => hint.remove(), 1000);
+                        }
+                    }
+                }
+
+                startX = 0;
+                startY = 0;
+            }, { passive: true });
+        })();
+
+        // ==========================================
+        // 2. FULLSCREEN MANAGEMENT
+        // ==========================================
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        function toggleFullscreen() {
+            const elem = document.documentElement;
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                }
+                fullscreenBtn.querySelector('span').textContent = 'Quitter';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+                fullscreenBtn.querySelector('span').textContent = 'Plein écran';
+            }
+        }
+
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'f' || e.key === 'F') {
+                toggleFullscreen();
+            }
+        });
+
+        // ==========================================
+        // 3. PWA INSTALL PROMPT (Android / Chrome)
+        // ==========================================
+        let deferredPrompt = null;
+        const installBtn = document.getElementById('install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'flex';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log('[PWA] Choix d’installation:', outcome);
+            deferredPrompt = null;
+            installBtn.style.display = 'none';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('[PWA] Subway Surfers a été installé avec succès !');
+            installBtn.style.display = 'none';
+        });
+
+        // ==========================================
+        // 4. iOS SAFARI INSTALL BANNER
+        // ==========================================
+        const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+        const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in window.navigator && window.navigator.standalone);
+
+        if (isIos && !isInStandaloneMode) {
+            const dismissed = localStorage.getItem('ios_banner_dismissed');
+            if (!dismissed) {
+                const iosGuide = document.getElementById('ios-guide');
+                if (iosGuide) iosGuide.style.display = 'flex';
+                document.getElementById('ios-close-btn').addEventListener('click', () => {
+                    iosGuide.style.display = 'none';
+                    localStorage.setItem('ios_banner_dismissed', 'true');
+                });
+            }
+        }
+
+        // ==========================================
+        // 5. UNLOCK AUDIO ON MOBILE FIRST TOUCH
+        // ==========================================
+        function unlockAudio() {
+            if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+                const ctx = window.unityAudioContext || (window.Module && window.Module.audioContext);
+                if (ctx && ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+            }
+        }
+        window.addEventListener('touchstart', unlockAudio, { once: true });
+        window.addEventListener('click', unlockAudio, { once: true });
+    </script>
+</body>
+</html>
